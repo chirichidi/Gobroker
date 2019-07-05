@@ -6,9 +6,9 @@ import (
 )
 
 type ReceiveMessage struct { // pubSub.ReceiveMessage() 가 블락킹 함수이므로, application 에서 고루틴으로 실행해야함 (리슨용 함수)
-	pubSub *redis.PubSub
+	pubSub      *redis.PubSub
 	_onDoneChan chan struct{}
-	ResultChan chan *redis.Message
+	ResultChan  chan *redis.Message
 }
 
 func (rm *ReceiveMessage) cmd(worker Broker.Worker) bool {
@@ -23,9 +23,7 @@ func (rm *ReceiveMessage) cmd(worker Broker.Worker) bool {
 		return false
 	}
 
-	아아아아아 여기 동작 이상해~~~~~~~
-
-
+	//TODO 아아아아아 여기 동작 이상해~~~~~~~
 
 	for rm.exitSignal() != false {
 		go func() bool {
