@@ -1,13 +1,31 @@
 package Broker
 
 import (
-	"fmt"
 	"github.com/go-redis/redis"
 	"time"
 )
 
 type _redis struct {
 	Client *redis.Client
+}
+
+type RedisParam struct {
+	command    int32
+	ResultChan chan interface{} // app 의 결과 수신용 채널
+	RedisParamDetails
+}
+
+type RedisParamDetails struct {
+	Key        string
+	Keys       []string
+	Value      string
+	Values     []string
+	Timeout    time.Duration
+	Channel    string
+	Channels   []string
+	Message    string
+	PubSub     *redis.PubSub
+	OnDoneChan chan struct{}
 }
 
 func InitRedis(client *redis.Client) *_redis {
@@ -25,13 +43,6 @@ func InitRedis(client *redis.Client) *_redis {
 		Client: client,
 	}
 	return _client
-}
-
-func (r *_redis) Up() {
-	fmt.Println("Redis Broker UP")
-	defer PrintPanicStack()
-
-
 }
 
 func (r *_redis) _Connect() {
@@ -53,7 +64,7 @@ func (r *_redis) Ping() string {
 	return p.Val()
 }
 
-func (r *_redis) RPush(key string, values ...string) {
+func (r *_redis) RPush(key string, values []string) {
 	defer PrintPanicStack()
 
 	for _, value := range values { //TODO 흠..............
@@ -65,7 +76,7 @@ func (r *_redis) RPush(key string, values ...string) {
 	}
 }
 
-func (r *_redis) BRPop(timeout time.Duration, keys ...string) []string {
+func (r *_redis) BRPop(timeout time.Duration, keys []string) []string {
 	defer PrintPanicStack()
 
 	result := make([]string, len(keys))
@@ -89,7 +100,7 @@ func (r *_redis) Publish(channel string, message string) int64 {
 	return n
 }
 
-func (r *_redis) Subscribe(channels ...string) []*redis.PubSub {
+func (r *_redis) Subscribe(channels []string) []*redis.PubSub {
 	defer PrintPanicStack()
 
 	result := make([]*redis.PubSub, len(channels)) //TODO 흠........
@@ -101,9 +112,15 @@ func (r *_redis) Subscribe(channels ...string) []*redis.PubSub {
 	return result
 }
 
-//TODO 구독취소
+func (r *_redis) UnSubscribe(pubSub *redis.PubSub, channels []string) {
+	defer PrintPanicStack()
 
-func (r *_redis) ReceiveMessage(pubSub *redis.PubSub, _onDoneChan <- chan struct{}) *redis.Message {
+	for _, topic := range channels {
+		pubSub.Unsubscribe(topic)
+	}
+}
+
+func (r *_redis) ReceiveMessage(pubSub *redis.PubSub, _onDoneChan <-chan struct{}) *redis.Message {
 	defer PrintPanicStack()
 
 	select {
@@ -118,10 +135,7 @@ func (r *_redis) ReceiveMessage(pubSub *redis.PubSub, _onDoneChan <- chan struct
 			panic(err.Error())
 			return nil
 		}
-
 		return m
 	}
 	return nil
 }
-
-
