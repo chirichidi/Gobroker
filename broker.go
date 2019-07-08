@@ -64,6 +64,8 @@ LOOP:
 				m._redis.RPush(p.Key, p.Values)
 			case COMMAND_REDIS_BRPOP:
 				p.ResultChan <- m._redis.BRPop(p.Timeout, p.Keys)
+			case COMMAND_REDIS_BLPOP:
+				p.ResultChan <- m._redis.BLPop(p.Timeout, p.Keys)
 			case COMMAND_REDIS_PUBLISH:
 				m._redis.Publish(p.Channel, p.Message)
 			case COMMAND_REDIS_SUBSCRIBE:

@@ -89,6 +89,19 @@ func (r *_redis) BRPop(timeout time.Duration, keys []string) []string {
 	return result
 }
 
+func (r *_redis) BLPop(timeout time.Duration, keys []string) []string {
+	defer PrintPanicStack()
+
+	result := make([]string, len(keys))
+	for i, key := range keys {
+		brPop := r.Client.BLPop(timeout, key) //TODO 흠.......
+
+		val := brPop.Val()
+		result[i] = val[1]
+	}
+	return result
+}
+
 func (r *_redis) Publish(channel string, message string) int64 {
 	defer PrintPanicStack()
 
