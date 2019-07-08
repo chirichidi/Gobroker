@@ -7,18 +7,18 @@ import (
 )
 
 type Manager struct {
-	CommandChan      chan *RedisParam // define 정의
-	_CommandChanSize int32
-	OnDoneChan       chan struct{} // 종료 전파용
+	CommandChan     chan *RedisParam // define 정의
+	CommandChanSize int32
+	OnDoneChan      chan struct{} // 종료 전파용
 
-	_redis *_redis
+	redisWrapper *_redis
 }
 
 func (m *Manager) Init(commandChannelSize int32) *Manager {
 	m.OnDoneChan = make(chan struct{}, 3)
 	m.CommandChan = make(chan *RedisParam, commandChannelSize)
 
-	m._CommandChanSize = commandChannelSize
+	m.CommandChanSize = commandChannelSize
 	return m
 }
 
@@ -28,8 +28,8 @@ func (m *Manager) Register(i interface{}) interface{} {
 	switch i.(type) {
 	case *redis.Client:
 		c := i.(*redis.Client)
-		m._redis = InitRedis(c)
-		return m._redis
+		m.redisWrapper = InitRedis(c)
+		return m.redisWrapper
 	}
 
 	panic("broker registering failed..")
@@ -61,19 +61,19 @@ LOOP:
 
 			switch p.command {
 			case COMMAND_REDIS_RPUSH:
-				m._redis.RPush(p.Key, p.Values)
+				m.redisWrapper.RPush(p.Key, p.Values)
 			case COMMAND_REDIS_BRPOP:
-				p.ResultChan <- m._redis.BRPop(p.Timeout, p.Keys)
+				p.ResultChan <- m.redisWrapper.BRPop(p.Timeout, p.Keys)
 			case COMMAND_REDIS_BLPOP:
-				p.ResultChan <- m._redis.BLPop(p.Timeout, p.Keys)
+				p.ResultChan <- m.redisWrapper.BLPop(p.Timeout, p.Keys)
 			case COMMAND_REDIS_PUBLISH:
-				m._redis.Publish(p.Channel, p.Message)
+				m.redisWrapper.Publish(p.Channel, p.Message)
 			case COMMAND_REDIS_SUBSCRIBE:
-				p.ResultChan <- m._redis.Subscribe(p.Channels)
+				p.ResultChan <- m.redisWrapper.Subscribe(p.Channels)
 			case COMMAND_REDIS_UNSUBSCRIBE:
-				m._redis.UnSubscribe(p.PubSub, p.Channels)
+				m.redisWrapper.UnSubscribe(p.PubSub, p.Channels)
 			case COMMAND_REDIS_RECEIVEMESSAGE:
-				p.ResultChan <- m._redis.ReceiveMessage(p.PubSub, p.OnDoneChan)
+				p.ResultChan <- m.redisWrapper.ReceiveMessage(p.PubSub, p.OnDoneChan)
 			default:
 				panic("broker command is wrong")
 			}
@@ -89,7 +89,7 @@ LOOP:
 func (m *Manager) pushCommand(param *RedisParam) {
 	defer PrintPanicStack()
 
-	if int32(len(m.CommandChan)) >= m._CommandChanSize {
+	if int32(len(m.CommandChan)) >= m.CommandChanSize {
 		panic("CommandChan Overflow...")
 	} else {
 		m.CommandChan <- param
@@ -108,12 +108,12 @@ func (m *Manager) Stop() {
 func (m *Manager) _Clear() {
 	defer PrintPanicStack()
 
-	m._redis._Clear()
+	m.redisWrapper._Clear()
 
 	for len(m.OnDoneChan) > 0 {
 		<-m.OnDoneChan
 	}
 	close(m.OnDoneChan)
 
-	m._CommandChanSize = 0
+	m.CommandChanSize = 0
 }

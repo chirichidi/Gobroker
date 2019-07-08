@@ -22,7 +22,7 @@ func brokerMock() *Manager {
 
 func TestManager_Register(t *testing.T) {
 	m := brokerMock()
-	assert.Equal(t, "PONG", m._redis.Ping())
+	assert.Equal(t, "PONG", m.redisWrapper.Ping())
 }
 
 func TestManager_Up(t *testing.T) {
@@ -59,7 +59,7 @@ func TestManager_Stop(t *testing.T) {
 	time.Sleep(100 * time.Microsecond)
 
 	m.Stop()
-	assert.Equal(t, int32(0), m._CommandChanSize)
+	assert.Equal(t, int32(0), m.CommandChanSize)
 }
 
 //TODO up 을 여러번 하면? 혹은 Register 를 여러번 하면??
