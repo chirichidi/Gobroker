@@ -10,7 +10,7 @@ import (
 func RedisMock() *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:         "localhost:6379",
-		Password:     "",
+		Password:     "12villeDance@",
 		DialTimeout:  time.Second,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,

@@ -1,12 +1,11 @@
 package bRedis
 
 import (
-	"dancechanlibrary/broker"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func Test_redis_BLPop(t *testing.T) {
+func Test_redis_BRPop(t *testing.T) {
 	//given
 	r := RedisMock()
 	defer r.Close()
@@ -15,14 +14,16 @@ func Test_redis_BLPop(t *testing.T) {
 	r.RPush(key1, value1)
 
 	//when
-	command := BLPop{
-		Time:       0,
-		Key:        "key1",
-		ResultChan: make(chan broker.CmdResult, 10),
+	command := BRPop{
+		Time: 0,
+		Keys: []string{"key1"},
 	}
 	redis := InitBRedis(r)
 	command.Cmd(redis)
 
 	//then
-	assert.Equal(t, "value1", command.Result().Result)
+	result, err := command.Result()
+	assert.Nil(t, err)
+	assert.Equal(t, "key1", result[0])
+	assert.Equal(t, "value1", result[1])
 }

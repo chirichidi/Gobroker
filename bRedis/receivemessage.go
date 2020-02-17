@@ -7,8 +7,12 @@ import (
 
 type ReceiveMessage struct { // PubSub.ReceiveMessage() 가 리슨(blocking) 함수이므로 application 에서 고루틴으로 실행할 것
 	PubSub     *redis.PubSub
-	OnDoneChan chan struct{}
+	onDoneChan chan struct{}
 	ResultChan chan broker.CmdResult `json:"-"`
+}
+
+func (rm *ReceiveMessage) init() {
+	rm.onDoneChan = make(chan struct{}, 1)
 }
 
 // 사용하는쪽에서 고루틴 회수 관리 잘해야함
@@ -20,7 +24,7 @@ func (rm *ReceiveMessage) Cmd(worker broker.Worker) broker.ErrorCodeType {
 }
 
 func (rm *ReceiveMessage) Result() broker.CmdResult {
-	return <-rm.ResultChan
+	return <-rm.ResultChan // receiveProcess() 종료 전까지 결과 리턴
 }
 
 func (rm *ReceiveMessage) receiveProcess() {
@@ -37,6 +41,7 @@ func (rm *ReceiveMessage) receiveProcessImpl() bool {
 	for {
 		if rm.PubSub == nil {
 			isWantedTermination = true
+			close(rm.ResultChan)
 			return isWantedTermination
 		}
 		m, err := rm.PubSub.ReceiveMessage() //blocking method
@@ -48,9 +53,13 @@ func (rm *ReceiveMessage) receiveProcessImpl() bool {
 	}
 }
 
+func (rm *ReceiveMessage) Stop() {
+	rm.onDoneChan <- struct{}{}
+}
+
 func (rm *ReceiveMessage) exitSignal() {
 	select {
-	case <-rm.OnDoneChan:
+	case <-rm.onDoneChan:
 		_ = rm.PubSub.Close()
 		rm.PubSub = nil
 	}

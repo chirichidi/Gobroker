@@ -18,7 +18,6 @@ func Test_redis_ReceiveMessage(t *testing.T) {
 
 	command := ReceiveMessage{
 		PubSub:     ps,
-		OnDoneChan: make(chan struct{}, 1),
 		ResultChan: make(chan broker.CmdResult, 10),
 	}
 
@@ -53,7 +52,6 @@ func Test_redis_ReceiveMessage2(t *testing.T) { // 종료 테스트
 
 	command := ReceiveMessage{
 		PubSub:     ps,
-		OnDoneChan: make(chan struct{}, 1),
 		ResultChan: make(chan broker.CmdResult, 10),
 	}
 
@@ -61,10 +59,9 @@ func Test_redis_ReceiveMessage2(t *testing.T) { // 종료 테스트
 	command.Cmd(InitBRedis(r))
 	time.Sleep(1 * time.Millisecond)
 
-	command.OnDoneChan <- struct{}{}
-	close(command.OnDoneChan)
+	command.Stop()
 	time.Sleep(1 * time.Millisecond)
 
 	//then
-	assert.Equal(t, 0, len(command.OnDoneChan))
+	assert.Equal(t, 0, len(command.onDoneChan))
 }

@@ -1,7 +1,6 @@
 package bRedis
 
 import (
-	"dancechanlibrary/broker"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,9 +10,8 @@ func Test_redis_RPush(t *testing.T) {
 	r := RedisMock()
 	defer r.Close()
 	command := RPush{
-		Key:        "Key",
-		Value:      "Value",
-		ResultChan: make(chan broker.CmdResult, 1),
+		Key:   "Key",
+		Value: "Value",
 	}
 
 	//when

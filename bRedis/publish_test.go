@@ -1,7 +1,6 @@
 package bRedis
 
 import (
-	"dancechanlibrary/broker"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -9,9 +8,8 @@ import (
 func Test_redis_Publish(t *testing.T) {
 	//given
 	command := Publish{
-		Channel:    "topic",
-		Message:    "Message",
-		ResultChan: make(chan broker.CmdResult, 1),
+		Channel: "topic",
+		Message: "Message",
 	}
 	redis := InitBRedis(RedisMock())
 	defer redis.Clear()
@@ -20,5 +18,7 @@ func Test_redis_Publish(t *testing.T) {
 	command.Cmd(redis)
 
 	//then
-	assert.Equal(t, int64(0), command.Result().Result) // 구독자가 없으므로 메시지 받은 수 0
+	result, err := command.Result()
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), result) // 구독자가 없으므로 메시지 받은 수 0
 }

@@ -1,7 +1,6 @@
 package bRedis
 
 import (
-	"dancechanlibrary/broker"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,9 +10,8 @@ func Test_Set(t *testing.T) {
 	r := RedisMock()
 	defer r.Close()
 	command := Set{
-		Key:        "SetTest",
-		Value:      "SetValue",
-		ResultChan: make(chan broker.CmdResult, 1),
+		Key:   "SetTest",
+		Value: "SetValue",
 	}
 	redis := InitBRedis(r)
 
@@ -21,9 +19,9 @@ func Test_Set(t *testing.T) {
 	command.Cmd(redis)
 
 	//then
-	result := command.Result()
-	assert.Equal(t, "OK", result.Result)
-	assert.Nil(t, result.Err)
+	result, err := command.Result()
+	assert.Nil(t, err, nil)
+	assert.Equal(t, "OK", result)
 
 	getResult, err := r.Get("SetTest").Result()
 	assert.Equal(t, "SetValue", getResult)
